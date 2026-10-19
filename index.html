@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reisekosten">
+<meta name="application-name" content="Reisekosten">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+<title>Reisekosten</title>
+<style>
+  :root {
+    --bg: #000000;
+    --group: #1C1C1E;
+    --row: #2C2C2E;
+    --fill: #3A3A3C;
+    --fill-2: rgba(118, 118, 128, 0.24);
+    --hairline: rgba(84, 84, 88, 0.6);
+    --text: #FFFFFF;
+    --text-2: rgba(235, 235, 245, 0.6);
+    --text-3: rgba(235, 235, 245, 0.3);
+    --accent: #0A84FF;
+    --green: #30D158;
+    --red: #FF453A;
+    --pass-1: #0A84FF;
+    --pass-2: #0058D6;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    --font-round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    --side: max(16px, env(safe-area-inset-left));
+    --side-r: max(16px, env(safe-area-inset-right));
+    --ease: cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.3;
+    letter-spacing: -0.2px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
+  button { -webkit-user-select: none; user-select: none; }
+  :focus { outline: none; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .num { font-family: var(--font-round); font-variant-numeric: tabular-nums; }
+
+  /* ---------- Navigationsleiste (erscheint beim Scrollen) ---------- */
+  .navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 40;
+    height: calc(env(safe-area-inset-top) + 50px);
+    padding: env(safe-area-inset-top) var(--side-r) 0 var(--side);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(22, 22, 24, 0.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 0.5px solid var(--hairline);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .navbar.show { opacity: 1; pointer-events: auto; }
+  .navbar .nav-title { font-size: 17px; font-weight: 600; }
+  .navbar .nav-btn { position: absolute; right: var(--side-r); bottom: 3px; }
+
+  .icon-btn {
+    width: 44px; height: 44px;
+    flex: 0 0 44px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    cursor: pointer;
+  }
+  .icon-btn .disc {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--fill-2);
+    display: grid;
+    place-items: center;
+  }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn:active .disc { opacity: 0.55; }
+
+  /* ---------- Seite ---------- */
+  .app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: calc(env(safe-area-inset-top) + 6px) var(--side-r) calc(env(safe-area-inset-bottom) + 40px) var(--side);
+  }
+  .large-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 8px 0 14px 4px;
+  }
+  .large-title h1 {
+    margin: 0;
+    font-size: 34px;
+    line-height: 41px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+  }
+  .large-title .icon-btn { margin-right: -6px; margin-bottom: -2px; }
+
+  .sec {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 30px 4px 10px;
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 700;
+    letter-spacing: 0.35px;
+  }
+  .group {
+    background: var(--group);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  /* ---------- Bordkarte (Gesamtsumme) ---------- */
+  .pass {
+    position: relative;
+    border-radius: 22px;
+    color: #fff;
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%),
+      linear-gradient(160deg, var(--pass-1) 0%, var(--pass-2) 100%);
+    box-shadow: 0 18px 40px -18px rgba(10, 132, 255, 0.55), inset 0 0.5px 0 rgba(255,255,255,0.35);
+    overflow: hidden;
+  }
+  .pass-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px 0;
+  }
+  .pass-brand { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+  .pass-logo {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.2);
+    display: grid;
+    place-items: center;
+  }
+  .pass-logo svg { width: 16px; height: 16px; }
+  .k { display: block; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.72); letter-spacing: 0; }
+  .v { display: block; font-size: 17px; font-weight: 600; margin-top: 2px; }
+  .pass-since { text-align: right; }
+  .pass-total { padding: 22px 18px 20px; }
+  .pass-total .total-amount {
+    display: block;
+    font-family: var(--font-round);
+    font-variant-numeric: tabular-nums;
+    font-size: 48px;
+    line-height: 54px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    margin-top: 2px;
+    word-break: break-word;
+    transform-origin: left center;
+    transition: transform 0.35s var(--ease);
+  }
+  .pass-total .total-amount.bump { transform: scale(1.035); }
+  .pass-tear {
+    position: relative;
+    height: 22px;
+  }
+  .pass-tear::before, .pass-tear::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .pass-tear::before { left: -11px; }
+  .pass-tear::after { right: -11px; }
+  .pass-tear span {
+    position: absolute;
+    left: 20px; right: 20px; top: 10.5px;
+    border-top: 1.5px dashed rgba(255,255,255,0.35);
+  }
+  .pass-fields {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 18px;
+    padding: 8px 18px 18px;
+  }
+  .pass-fields > div { min-width: 0; }
+  .pass-fields > div:last-child { text-align: right; }
+  .pass-fields .v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Formular ---------- */
+  .frow {
+    position: relative;
+    background: var(--group);
+    padding: 0 16px;
+  }
+  .frow + .frow::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 16px; right: 0;
+    border-top: 0.5px solid var(--hairline);
+  }
+  .frow.invalid { background: rgba(255, 69, 58, 0.12); }
+  .frow label.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .plain-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+    caret-color: var(--accent);
+  }
+  .plain-input::placeholder { color: var(--text-3); }
+  .title-input { height: 52px; font-size: 17px; }
+
+  .amount-wrap { display: flex; align-items: center; gap: 12px; padding: 12px 0 12px; }
+  .amount-input {
+    flex: 1;
+    min-width: 0;
+    height: 46px;
+    font-family: var(--font-round);
+    font-variant-numeric: tabular-nums;
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  .cur-pill {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 12px 0 10px;
+    border-radius: 19px;
+    background: var(--fill-2);
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .cur-pill .flag { font-size: 18px; line-height: 1; }
+  .cur-pill svg { width: 10px; height: 10px; color: var(--text-2); margin-left: 2px; }
+  .cur-pill select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 16px;
+  }
+  .cur-pill:has(select:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .conv-hint {
+    margin: -6px 0 0;
+    padding-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .conv-hint:empty { display: none; }
+
+  .chips {
+    position: relative;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    margin: 0 -16px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px 0 10px;
+    border-radius: 18px;
+    border: none;
+    background: var(--fill-2);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+  .chip .e { font-size: 16px; }
+  .chip:active { transform: scale(0.96); }
+  .chip[aria-checked="true"] { background: var(--chip-color); color: #fff; font-weight: 600; }
+  .hidden-select { display: none; }
+
+  .error { margin: 10px 4px 0; font-size: 14px; color: var(--red); }
+  .error:empty { display: none; }
+  .shake { animation: shake 0.35s ease; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .btn {
+    width: 100%;
+    min-height: 50px;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 16px;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .btn:active { opacity: 0.7; transform: scale(0.985); }
+  .btn-primary { background: var(--accent); color: #fff; margin-top: 12px; }
+  .btn-secondary { background: var(--row); color: var(--accent); font-weight: 400; }
+  .btn-plain { background: transparent; color: var(--accent); font-weight: 400; width: auto; min-height: 44px; padding: 0 4px; }
+  .btn-plain.strong { font-weight: 600; }
+  .row-btn {
+    width: 100%;
+    min-height: 50px;
+    border: none;
+    background: var(--group);
+    font-size: 17px;
+    cursor: pointer;
+  }
+  .row-btn:active { background: var(--row); }
+  .row-btn.danger { color: var(--red); }
+
+  /* ---------- Diagramm ---------- */
+  .chart-card { padding: 18px 16px; }
+  .chart-wrap { display: flex; align-items: center; gap: 20px; }
+  .donut { position: relative; width: 156px; height: 156px; flex: 0 0 156px; }
+  .donut svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .donut-center .n { font-family: var(--font-round); font-size: 30px; font-weight: 700; line-height: 1; }
+  .donut-center .l { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+  .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; }
+  .legend li {
+    display: grid;
+    grid-template-columns: 10px 1fr auto;
+    align-items: center;
+    column-gap: 8px;
+    padding: 5px 0;
+  }
+  .legend .dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend .name { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend .pct { font-family: var(--font-round); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .legend .amt { grid-column: 2 / 4; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .legend-empty { color: var(--text-2); font-size: 15px; line-height: 1.4; }
+  @media (max-width: 360px) {
+    .chart-wrap { flex-direction: column; align-items: stretch; }
+    .donut { align-self: center; }
+  }
+
+  /* ---------- Verlauf ---------- */
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 18px 16px 6px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .day-head:first-child { margin-top: 0; }
+  .day-head .sum { font-variant-numeric: tabular-nums; }
+  .swipe {
+    position: relative;
+    overflow: hidden;
+  }
+  .swipe + .swipe .row::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 64px; right: 0;
+    border-top: 0.5px solid var(--hairline);
+  }
+  .swipe-del {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 88px;
+    border: none;
+    background: var(--red);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+  }
+  .swipe-del svg { width: 20px; height: 20px; }
+  .row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 16px;
+    background: var(--group);
+    touch-action: pan-y;
+    transition: transform 0.3s var(--ease);
+    will-change: transform;
+  }
+  .row.dragging { transition: none; }
+  .row .ico {
+    width: 36px; height: 36px;
+    flex: 0 0 36px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    font-size: 19px;
+  }
+  .row .meta { flex: 1; min-width: 0; }
+  .row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .s { font-size: 14px; color: var(--text-2); margin-top: 2px; white-space: nowrap; }
+  .row .amt { text-align: right; flex: 0 0 auto; }
+  .row .amt .eur { font-family: var(--font-round); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row .amt .orig { font-size: 14px; color: var(--text-2); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .list-hint { margin: 8px 16px 0; font-size: 13px; color: var(--text-2); }
+  .empty {
+    text-align: center;
+    padding: 34px 24px;
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .empty .ill {
+    width: 56px; height: 56px;
+    margin: 0 auto 12px;
+    border-radius: 16px;
+    background: var(--fill-2);
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+  }
+  .empty strong { display: block; color: var(--text); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+
+  .footnote { text-align: center; font-size: 13px; color: var(--text-3); margin: 12px 24px 0; }
+
+  /* ---------- Overlays ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet-overlay { align-items: flex-end; justify-content: center; }
+  .alert-overlay { align-items: center; justify-content: center; padding: 24px; }
+
+  .sheet {
+    width: 100%;
+    max-width: 600px;
+    max-height: calc(100vh - env(safe-area-inset-top) - 12px);
+    display: flex;
+    flex-direction: column;
+    background: var(--group);
+    border-radius: 14px 14px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.4s var(--ease);
+  }
+  .overlay.open .sheet { transform: translateY(0); }
+  .sheet-head {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 12px 6px;
+  }
+  .sheet-head::before {
+    content: "";
+    position: absolute;
+    top: 5px; left: 50%;
+    width: 36px; height: 5px;
+    margin-left: -18px;
+    border-radius: 3px;
+    background: var(--fill);
+  }
+  .sheet-head h2 { margin: 0; font-size: 17px; font-weight: 600; flex: 1; text-align: center; }
+  .sheet-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 16px calc(env(safe-area-inset-bottom) + 24px);
+  }
+  .sheet .note { font-size: 13px; color: var(--text-2); margin: 8px 16px 18px; line-height: 1.4; }
+  .sheet .error { margin: 10px 16px 0; }
+  .search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    margin: 0 0 4px;
+    padding: 0 10px;
+    border-radius: 10px;
+    background: var(--row);
+    box-shadow: 0 -8px 0 8px var(--group);
+    color: var(--text-2);
+  }
+  .search-bar svg { width: 16px; height: 16px; flex: 0 0 16px; }
+  .search-bar input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 17px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .search-bar input::placeholder { color: var(--text-2); }
+  .search-bar input:focus-visible { outline: none; }
+  .search-bar:focus-within { box-shadow: 0 -8px 0 8px var(--group), 0 0 0 1.5px var(--accent); }
+  .rate-sec-title { margin: 22px 16px 7px; font-size: 13px; font-weight: 400; color: var(--text-2); }
+  .rate-none { text-align: center; color: var(--text-2); font-size: 15px; margin: 28px 16px; }
+  .hide { display: none !important; }
+  .rates-group { background: var(--row); border-radius: 12px; overflow: hidden; }
+  .rate-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 58px;
+    padding: 6px 12px 6px 14px;
+  }
+  .rate-row:not(.hide) ~ .rate-row:not(.hide)::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 56px; right: 0;
+    border-top: 0.5px solid var(--hairline);
+  }
+  .rate-row .flag { font-size: 26px; line-height: 1; width: 30px; text-align: center; }
+  .rate-row .lbl { flex: 1; min-width: 0; }
+  .rate-row .lbl b { display: block; font-weight: 600; }
+  .rate-row .lbl small { display: block; color: var(--text-2); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rate-input {
+    width: 132px;
+    height: 40px;
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    background: var(--fill-2);
+    padding: 0 10px;
+    text-align: right;
+    font-family: var(--font-round);
+    font-variant-numeric: tabular-nums;
+    font-size: 17px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .rate-input:focus { border-color: var(--accent); }
+  .rate-input.invalid { border-color: var(--red); }
+  .rate-row .unit { color: var(--text-2); font-size: 15px; }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--row);
+    border-radius: 12px;
+    padding: 10px 14px;
+    min-height: 54px;
+    cursor: pointer;
+  }
+  .toggle-row span.txt { flex: 1; font-size: 16px; }
+  .switch { position: relative; width: 51px; height: 31px; flex: 0 0 51px; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; z-index: 1; cursor: pointer; }
+  .switch .track { position: absolute; inset: 0; border-radius: 16px; background: var(--fill-2); transition: background 0.25s ease; }
+  .switch .track::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 27px; height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16);
+    transition: transform 0.25s var(--ease);
+  }
+  .switch input:checked + .track { background: var(--green); }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sheet .btn-secondary { margin-top: 28px; }
+  .sheet .toggle-row { margin-bottom: 4px; }
+
+  .alert {
+    width: 100%;
+    max-width: 270px;
+    border-radius: 14px;
+    overflow: hidden;
+    text-align: center;
+    background: rgba(37, 37, 37, 0.82);
+    -webkit-backdrop-filter: saturate(180%) blur(40px);
+    backdrop-filter: saturate(180%) blur(40px);
+    transform: scale(1.1);
+    transition: transform 0.25s var(--ease);
+  }
+  .overlay.open .alert { transform: scale(1); }
+  .alert .body { padding: 19px 16px 18px; }
+  .alert h3 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
+  .alert p { margin: 0; font-size: 13px; line-height: 1.35; }
+  .alert .actions { display: flex; border-top: 0.5px solid rgba(84,84,88,0.65); }
+  .alert .actions button {
+    flex: 1;
+    min-height: 44px;
+    border: none;
+    background: transparent;
+    font-size: 17px;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .alert .actions button + button { border-left: 0.5px solid rgba(84,84,88,0.65); }
+  .alert .actions button.destructive { color: var(--red); font-weight: 600; }
+  .alert .actions button:active { background: rgba(255,255,255,0.08); }
+
+  /* ---------- Rückmeldung im Stil der Dynamic Island ---------- */
+  .island {
+    position: fixed;
+    top: max(8px, calc(env(safe-area-inset-top) - 48px));
+    left: 50%;
+    z-index: 60;
+    width: 126px;
+    height: 37px;
+    margin-left: -63px;
+    border-radius: 19px;
+    background: #000;
+    box-shadow: 0 0 0 0.5px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 0 10px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: width 0.45s var(--ease), height 0.45s var(--ease), margin-left 0.45s var(--ease),
+                border-radius 0.45s var(--ease), opacity 0.2s ease;
+  }
+  .island.show {
+    width: min(360px, calc(100vw - 24px));
+    margin-left: calc(min(360px, calc(100vw - 24px)) / -2);
+    height: 56px;
+    border-radius: 28px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .island > * { opacity: 0; transition: opacity 0.2s ease; }
+  .island.show > * { opacity: 1; transition-delay: 0.15s; }
+  .island .badge {
+    width: 36px; height: 36px;
+    flex: 0 0 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(48, 209, 88, 0.2);
+    color: var(--green);
+  }
+  .island.warn .badge { background: rgba(255, 69, 58, 0.2); color: var(--red); }
+  .island .badge svg { width: 18px; height: 18px; }
+  .island .msg { flex: 1; min-width: 0; font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .island button {
+    border: none;
+    background: var(--fill-2);
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 600;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 18px;
+    cursor: pointer;
+  }
+  .island button:empty { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="navbar" id="navbar" aria-hidden="true">
+  <span class="nav-title">Reisekosten</span>
+  <button class="icon-btn nav-btn open-rates" type="button" aria-label="Wechselkurse anpassen" tabindex="-1">
+    <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V4M7 4L3 8M7 4l4 4"/><path d="M17 7v13M17 20l4-4M17 20l-4-4"/></svg></span>
+  </button>
+</div>
+
+<main class="app">
+  <header class="large-title" id="largeTitle">
+    <h1>Reisekosten</h1>
+    <button class="icon-btn open-rates" type="button" aria-label="Wechselkurse anpassen">
+      <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V4M7 4L3 8M7 4l4 4"/><path d="M17 7v13M17 20l4-4M17 20l-4-4"/></svg></span>
+    </button>
+  </header>
+
+  <section class="pass" aria-live="polite" aria-label="Gesamtausgaben">
+    <div class="pass-top">
+      <div class="pass-brand">
+        <span class="pass-logo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5v5.5l-2 1.5V21l3.5-1 3.5 1v-1.5l-2-1.5V13z"/></svg></span>
+        <span>Reisekasse</span>
+      </div>
+      <div class="pass-since"><span class="k">Seit</span><span class="v" id="passSince">–</span></div>
+    </div>
+    <div class="pass-total">
+      <span class="k">Gesamt ausgegeben</span>
+      <span class="total-amount" id="totalAmount">0,00 €</span>
+    </div>
+    <div class="pass-tear" aria-hidden="true"><span></span></div>
+    <div class="pass-fields">
+      <div><span class="k">Ausgaben</span><span class="v num" id="passCount">0</span></div>
+      <div><span class="k">Ø pro Tag</span><span class="v num" id="passAvg">–</span></div>
+      <div><span class="k">Größter Posten</span><span class="v" id="passTop">–</span></div>
+    </div>
+  </section>
+
+  <h2 class="sec">Neue Ausgabe</h2>
+  <form id="expenseForm" novalidate autocomplete="off">
+    <div class="group">
+      <div class="frow" id="titleRow">
+        <label class="sr" for="title">Beschreibung</label>
+        <input class="plain-input title-input" id="title" type="text" maxlength="60" placeholder="Wofür? z. B. Abendessen" enterkeyhint="next" autocapitalize="sentences">
+      </div>
+      <div class="frow" id="amountRow">
+        <div class="amount-wrap">
+          <label class="sr" for="amount">Betrag</label>
+          <input class="plain-input amount-input" id="amount" type="text" inputmode="decimal" placeholder="0,00" enterkeyhint="done">
+          <span class="cur-pill">
+            <span class="flag" id="curFlag" aria-hidden="true">🇪🇺</span>
+            <span id="curCode">EUR</span>
+            <svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <select id="currency" aria-label="Währung"></select>
+          </span>
+        </div>
+        <div class="conv-hint" id="convHint"></div>
+      </div>
+      <div class="frow">
+        <div class="chips" id="catChips" role="radiogroup" aria-label="Kategorie"></div>
+        <select class="hidden-select" id="category" aria-hidden="true" tabindex="-1"></select>
+      </div>
+    </div>
+    <p class="error" id="formError" role="alert"></p>
+    <button class="btn btn-primary" type="submit">Hinzufügen</button>
+  </form>
+
+  <h2 class="sec">Verteilung</h2>
+  <section class="group chart-card">
+    <div class="chart-wrap">
+      <div class="donut">
+        <svg id="donutSvg" viewBox="0 0 200 200" role="img" aria-label="Kreisdiagramm der Ausgaben nach Kategorie"></svg>
+        <div class="donut-center">
+          <div class="n" id="donutCount">0</div>
+          <div class="l" id="donutLabel">Ausgaben</div>
+        </div>
+      </div>
+      <ul class="legend" id="legend"></ul>
+    </div>
+  </section>
+
+  <h2 class="sec">Verlauf</h2>
+  <section id="list"></section>
+
+  <div class="group" style="margin-top:30px">
+    <button class="row-btn danger" id="resetBtn" type="button">Alle Daten zurücksetzen</button>
+  </div>
+  <p class="footnote">Alle Daten bleiben ausschließlich auf diesem Gerät.</p>
+</main>
+
+<!-- Wechselkurse -->
+<div class="overlay sheet-overlay" id="ratesOverlay" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ratesTitle">
+    <div class="sheet-head">
+      <button class="btn btn-plain" type="button" id="ratesCancel">Abbrechen</button>
+      <h2 id="ratesTitle">Wechselkurse</h2>
+      <button class="btn btn-plain strong" type="button" id="ratesSave">Sichern</button>
+    </div>
+    <div class="sheet-body">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="rateSearch" type="search" placeholder="Währung oder Land suchen" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Währung suchen">
+      </div>
+      <p class="note">Wie viel Euro eine Einheit der Fremdwährung wert ist. Neue Ausgaben werden mit diesen Kursen umgerechnet.</p>
+      <label class="toggle-row" for="recalcToggle">
+        <span class="txt">Bisherige Ausgaben neu umrechnen</span>
+        <span class="switch"><input type="checkbox" id="recalcToggle"><span class="track"></span></span>
+      </label>
+      <p class="error" id="ratesError" role="alert"></p>
+      <div id="ratesList"></div>
+      <button class="btn btn-secondary" type="button" id="ratesDefault">Standardkurse wiederherstellen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestätigung -->
+<div class="overlay alert-overlay" id="confirmOverlay" aria-hidden="true">
+  <div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+    <div class="body">
+      <h3 id="confirmTitle">Alle Daten löschen?</h3>
+      <p id="confirmText"></p>
+    </div>
+    <div class="actions">
+      <button type="button" id="confirmCancel">Abbrechen</button>
+      <button type="button" class="destructive" id="confirmOk">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<div class="island" id="toast" role="status" aria-live="polite">
+  <span class="badge" id="toastBadge"></span>
+  <span class="msg" id="toastMsg"></span>
+  <button type="button" id="toastAction"></button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Konstanten ---------- */
+  var STORAGE_KEY = 'reisekosten.v1';
+  /*
+   * Alle aktuell gültigen Währungen (ISO 4217) mit Standardkurs in "Einheiten pro 1 Euro".
+   * Quelle: currencyconverter.org, Stand 19.10.2026, gegengeprüft mit fxrate.io und den EZB-Referenzkursen.
+   * Neue Währung ergänzen: einfach "CODE Kurs" anhängen – Name und Flagge ermittelt die App selbst.
+   */
+  var PER_EUR =
+    'AED 4.118 AFN 72.7683 ALL 90.782 AMD 405.15 AOA 1023.64 ARS 1708.98 AUD 1.606 ' +
+    'AWG 2.0069 AZN 1.906 BAM 1.9558 BBD 2.2424 BDT 138.51 BHD 0.42156 BIF 3362.85 ' +
+    'BMD 1.1212 BND 1.4362 BOB 13.1178 BRL 5.6594 BSD 1.1212 BTN 106.42 BWP 14.9891 ' +
+    'BYN 3.3411 BZD 2.2424 CAD 1.5817 CDF 2542.07 CHF 0.92682 CLP 1100.48 CNY 7.4902 ' +
+    'COP 3533.17 CRC 509.1 CUP 26.9083 CVE 110.27 CZK 24.3346 DJF 199.26 DKK 7.4747 ' +
+    'DOP 68.9638 DZD 151.53 EGP 60.4398 ERN 16.8177 ETB 180.38 FJD 2.5332 FKP 0.84268 ' +
+    'GBP 0.84273 GEL 2.9131 GHS 13.0872 GIP 0.84268 GMD 84.0773 GNF 9930.3 GTQ 8.5636 ' +
+    'GYD 234.09 HKD 8.7992 HNL 30.1667 HTG 149.04 HUF 362.69 IDR 20121.8 ILS 3.4782 ' +
+    'INR 106.39 IQD 1695.22 IRR 2.04905e+06 ISK 136.2 JMD 177.42 JOD 0.79604 JPY 177.76 ' +
+    'KES 145.57 KGS 98.0786 KHR 4559.84 KMF 491.93 KPW 1009.06 KRW 1493.36 KWD 0.34864 ' +
+    'KYD 0.93431 KZT 506.65 LAK 25066.5 LBP 100346 LKR 371.59 LRD 191.29 LSL 18.5219 ' +
+    'LYD 7.1934 MAD 10.9805 MDL 19.9761 MGA 5095.77 MKD 61.5752 MMK 2354.12 MNT 4032.35 ' +
+    'MOP 9.0635 MRU 45.0006 MUR 52.9646 MVR 17.3335 MWK 1943.76 MXN 20.6711 MYR 4.5778 ' +
+    'MZN 71.2398 NAD 18.4199 NGN 1493.25 NIO 41.252 NOK 10.5594 NPR 170.28 NZD 1.9802 ' +
+    'OMR 0.43177 PAB 1.1212 PEN 3.8541 PGK 4.9544 PHP 70.6271 PKR 310.23 PLN 4.3711 ' +
+    'PYG 6464.63 QAR 4.0822 RON 5.3264 RSD 117.42 RUB 92.777 RWF 1654.01 SAR 4.2063 ' +
+    'SBD 9.0467 SCR 16.7037 SDG 674.39 SEK 11.1242 SGD 1.4353 SHP 0.84111 SLE 25.9281 ' +
+    'SOS 640.98 SRD 42.3021 STN 24.6811 SVC 9.8103 SYP 136.26 SZL 18.4087 THB 37.6537 ' +
+    'TJS 10.3597 TMT 3.9241 TND 3.3439 TOP 2.6829 TRY 55.5563 TTD 7.5625 TWD 36.4605 ' +
+    'TZS 2946.46 UAH 50.4391 UGX 4659.29 USD 1.1212 UYU 45.012 UZS 13504.3 VES 986.07 ' +
+    'VND 29035.2 VUV 134 WST 3.1075 XAF 655.96 XCD 3.0272 XCG 2.0195 XOF 655.96 ' +
+    'XPF 119.97 YER 264.73 ZAR 18.425 ZMW 22.5357 ZWG 29.9485';
+  var DEFAULT_RATES = { EUR: 1 };
+  PER_EUR.trim().split(/\s+/).forEach(function (part, i, arr) {
+    if (i % 2) DEFAULT_RATES[arr[i - 1]] = Number((1 / Number(part)).toPrecision(4));
+  });
+  /* Diese vier Kurse stammen aus der ursprünglichen Vorgabe und bleiben unverändert */
+  Object.assign(DEFAULT_RATES, { USD: 0.92, GBP: 1.16, JPY: 0.006, CHF: 1.05 });
+  var CURRENCIES = Object.keys(DEFAULT_RATES);
+  var CATEGORIES = {
+    'Unterkunft': { color: '#0A84FF', icon: '🏨' },
+    'Essen':      { color: '#FF9F0A', icon: '🍽️' },
+    'Reisen':     { color: '#30D158', icon: '🚕' },
+    'Flug':       { color: '#BF5AF2', icon: '✈️' },
+    'Sonstiges':  { color: '#FF375F', icon: '🛍️' }
+  };
+  var CATEGORY_KEYS = Object.keys(CATEGORIES);
+  var DAY_MS = 86400000;
+
+  var ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+
+  /* ---------- State ---------- */
+  var state = {
+    expenses: [],
+    rates: Object.assign({}, DEFAULT_RATES),
+    lastCurrency: 'EUR',
+    lastCategory: 'Essen'
+  };
+
+  /* ---------- Helfer ---------- */
+  function $(sel) { return document.querySelector(sel); }
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+  function uid() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  }
+
+  var moneyFormatters = {};
+  function fmtMoney(value, currency) {
+    currency = currency || 'EUR';
+    if (!moneyFormatters[currency]) {
+      moneyFormatters[currency] = new Intl.NumberFormat('de-DE', { style: 'currency', currency: currency });
+    }
+    return moneyFormatters[currency].format(value);
+  }
+
+  function fmtPercent(fraction) {
+    return (fraction * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %';
+  }
+
+  /* Anzahl Nachkommastellen laut ISO 4217 (JPY, KRW, VND: 0 – sonst meist 2) */
+  function decimalsFor(currency) {
+    if (!moneyFormatters[currency]) fmtMoney(0, currency);
+    return moneyFormatters[currency].resolvedOptions().maximumFractionDigits;
+  }
+
+  function roundForCurrency(amount, currency) {
+    var f = Math.pow(10, decimalsFor(currency));
+    return Math.round((amount + Number.EPSILON) * f) / f;
+  }
+
+  /* Kurs mit bis zu 6 gültigen Stellen – auch für sehr kleine Werte wie beim Iranischen Rial */
+  function fmtRate(n) {
+    return n.toLocaleString('de-DE', { maximumSignificantDigits: 6, useGrouping: false });
+  }
+
+  /* Deutsche Währungsnamen liefert das System (z. B. "Thailändischer Baht") */
+  var currencyNames = null;
+  try { currencyNames = new Intl.DisplayNames(['de'], { type: 'currency' }); } catch (e) {}
+  /* Sehr junge Währungen, die ältere Systeme noch nicht kennen */
+  var FALLBACK_NAMES = { SLE: 'Sierra-leonischer Leone', XCG: 'Karibischer Gulden', ZWG: 'Simbabwe-Gold' };
+  function curName(c) {
+    var n = null;
+    try { n = currencyNames && currencyNames.of(c); } catch (e) {}
+    return n && n !== c ? n : (FALLBACK_NAMES[c] || c);
+  }
+
+  /* Ländername für die Suche (USD → "Vereinigte Staaten"), ebenfalls vom System */
+  var regionNames = null;
+  try { regionNames = new Intl.DisplayNames(['de'], { type: 'region' }); } catch (e) {}
+  function curCountry(c) {
+    if (c.charAt(0) === 'X' && c !== 'XCG') return '';
+    try { return (regionNames && regionNames.of(c === 'XCG' ? 'CW' : c.slice(0, 2))) || ''; } catch (e) { return ''; }
+  }
+
+  /* Flagge aus den ersten zwei Buchstaben des ISO-Codes (USD → US → 🇺🇸), Sonderfälle von Hand */
+  var SPECIAL_FLAGS = { EUR: '🇪🇺', XAF: '🌍', XOF: '🌍', XCD: '🌎', XPF: '🌏', XCG: '🇨🇼' };
+  function curFlag(c) {
+    if (SPECIAL_FLAGS[c]) return SPECIAL_FLAGS[c];
+    return String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65, 0x1F1E6 + c.charCodeAt(1) - 65);
+  }
+
+  /**
+   * Wandelt Benutzereingaben wie "12,50", "12.50", "1.234,56" oder "1,234.56" in eine Zahl.
+   * Bei Geldbeträgen (moneyDecimals = Nachkommastellen der Währung) wird ein einzelnes Trennzeichen
+   * mit genau drei Folgeziffern als Tausendertrenner gelesen ("45.000" → 45000) – außer bei Währungen
+   * mit drei Nachkommastellen wie dem Kuwait-Dinar, wo "1.250" wirklich 1,25 bedeutet.
+   * Gibt NaN zurück, wenn die Eingabe ungültig ist.
+   */
+  function parseAmount(raw, moneyDecimals) {
+    var isMoney = moneyDecimals != null && moneyDecimals < 3;
+    if (raw == null) return NaN;
+    var s = String(raw).trim().replace(/[\s '€$£¥₩₫฿]/g, '');
+    if (!s || !/^[0-9.,]+$/.test(s)) return NaN;
+    var lastComma = s.lastIndexOf(',');
+    var lastDot = s.lastIndexOf('.');
+    var parts;
+    if (lastComma > -1 && lastDot > -1) {
+      var dec = lastComma > lastDot ? ',' : '.';
+      var thou = dec === ',' ? '.' : ',';
+      s = s.split(thou).join('');
+      if (s.split(dec).length > 2) return NaN;
+      s = s.replace(dec, '.');
+    } else if (lastComma > -1 || lastDot > -1) {
+      parts = s.split(lastComma > -1 ? ',' : '.');
+      var looksLikeThousands = isMoney && parts.length === 2 &&
+        parts[1].length === 3 && /^[1-9]\d{0,2}$/.test(parts[0]);
+      s = (parts.length > 2 || looksLikeThousands) ? parts.join('') : parts.join('.');
+    }
+    if (!/^\d*\.?\d*$/.test(s) || s === '.') return NaN;
+    return parseFloat(s);
+  }
+
+  function startOfDay(d) {
+    var x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x.getTime();
+  }
+
+  var dayFmt = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  var dayFmtYear = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+  var shortDateFmt = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' });
+  var timeFmt = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+  function dayLabel(dateStr) {
+    var d = new Date(dateStr);
+    var today = startOfDay(new Date());
+    var day = startOfDay(d);
+    if (day === today) return 'Heute';
+    if (day === today - DAY_MS) return 'Gestern';
+    return d.getFullYear() === new Date().getFullYear() ? dayFmt.format(d) : dayFmtYear.format(d);
+  }
+
+  function hexToRgba(hex, alpha) {
+    var h = hex.replace('#', '');
+    return 'rgba(' + parseInt(h.substr(0, 2), 16) + ',' + parseInt(h.substr(2, 2), 16) + ',' +
+      parseInt(h.substr(4, 2), 16) + ',' + alpha + ')';
+  }
+
+  /* ---------- Persistenz ---------- */
+  function load() {
+    var raw;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return; }
+    if (!raw) return;
+    try {
+      var data = JSON.parse(raw);
+      if (data && Array.isArray(data.expenses)) {
+        state.expenses = data.expenses.filter(function (e) {
+          return e && typeof e.title === 'string' &&
+            isFinite(Number(e.amountOriginal)) && isFinite(Number(e.amountEUR)) &&
+            CURRENCIES.indexOf(e.currency) > -1 && !isNaN(new Date(e.date).getTime());
+        }).map(function (e) {
+          return {
+            id: String(e.id || uid()),
+            title: e.title,
+            amountOriginal: Number(e.amountOriginal),
+            currency: e.currency,
+            amountEUR: Number(e.amountEUR),
+            category: CATEGORY_KEYS.indexOf(e.category) > -1 ? e.category : 'Sonstiges',
+            date: new Date(e.date).toISOString()
+          };
+        });
+      }
+      if (data && data.rates) {
+        CURRENCIES.forEach(function (c) {
+          if (c === 'EUR') return;
+          var v = Number(data.rates[c]);
+          if (isFinite(v) && v > 0) state.rates[c] = v;
+        });
+      }
+      if (data && CURRENCIES.indexOf(data.lastCurrency) > -1) state.lastCurrency = data.lastCurrency;
+      if (data && CATEGORY_KEYS.indexOf(data.lastCategory) > -1) state.lastCategory = data.lastCategory;
+    } catch (e) {
+      console.warn('Gespeicherte Daten konnten nicht gelesen werden.', e);
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return true;
+    } catch (e) {
+      showToast('Speichern fehlgeschlagen – Speicher voll', null, null, 'warn');
+      return false;
+    }
+  }
+
+  /* ---------- Rendering ---------- */
+  function computeTotals() {
+    var totals = {};
+    var total = 0;
+    CATEGORY_KEYS.forEach(function (k) { totals[k] = 0; });
+    state.expenses.forEach(function (e) {
+      totals[e.category] += e.amountEUR;
+      total += e.amountEUR;
+    });
+    return { byCategory: totals, total: round2(total) };
+  }
+
+  function renderPass(byCategory, total) {
+    $('#totalAmount').textContent = fmtMoney(total, 'EUR');
+    var n = state.expenses.length;
+    $('#passCount').textContent = String(n);
+    if (!n) {
+      $('#passAvg').textContent = '–';
+      $('#passTop').textContent = '–';
+      $('#passSince').textContent = '–';
+      return;
+    }
+    var first = Math.min.apply(null, state.expenses.map(function (e) { return startOfDay(e.date); }));
+    var days = Math.max(1, Math.round((startOfDay(new Date()) - first) / DAY_MS) + 1);
+    $('#passAvg').textContent = fmtMoney(total / days, 'EUR');
+    $('#passSince').textContent = first === startOfDay(new Date()) ? 'Heute' : shortDateFmt.format(new Date(first));
+    var top = CATEGORY_KEYS.slice().sort(function (a, b) { return byCategory[b] - byCategory[a]; })[0];
+    $('#passTop').textContent = CATEGORIES[top].icon + ' ' + top;
+  }
+
+  function renderChart(byCategory, total) {
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = $('#donutSvg');
+    var R = 78, STROKE = 22, C = 2 * Math.PI * R;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    function ring(stroke, dash, offset, cap) {
+      var c = document.createElementNS(svgNS, 'circle');
+      c.setAttribute('cx', '100'); c.setAttribute('cy', '100'); c.setAttribute('r', String(R));
+      c.setAttribute('fill', 'none');
+      c.setAttribute('stroke', stroke);
+      c.setAttribute('stroke-width', String(STROKE));
+      if (dash) c.setAttribute('stroke-dasharray', dash);
+      if (offset != null) c.setAttribute('stroke-dashoffset', String(offset));
+      if (cap) c.setAttribute('stroke-linecap', cap);
+      c.setAttribute('transform', 'rotate(-90 100 100)');
+      svg.appendChild(c);
+      return c;
+    }
+
+    ring('rgba(118,118,128,0.24)');
+
+    var segs = CATEGORY_KEYS.filter(function (k) { return byCategory[k] > 0; })
+      .sort(function (a, b) { return byCategory[b] - byCategory[a]; });
+
+    if (total > 0 && segs.length === 1) {
+      ring(CATEGORIES[segs[0]].color);
+    } else if (total > 0) {
+      /* Runde Enden ragen um STROKE/2 über das Segment hinaus – das wird hier ausgeglichen */
+      var GAP = 6;
+      var offset = 0;
+      segs.forEach(function (k) {
+        var len = (byCategory[k] / total) * C;
+        var visible = Math.max(len - GAP - STROKE, 0.01);
+        var start = offset + (GAP + STROKE) / 2;
+        var c = ring(CATEGORIES[k].color, visible + ' ' + (C - visible), -start, 'round');
+        var t = document.createElementNS(svgNS, 'title');
+        t.textContent = k + ': ' + fmtPercent(byCategory[k] / total);
+        c.appendChild(t);
+        offset += len;
+      });
+    }
+
+    var n = state.expenses.length;
+    $('#donutCount').textContent = String(n);
+    $('#donutLabel').textContent = n === 1 ? 'Ausgabe' : 'Ausgaben';
+
+    var legend = $('#legend');
+    legend.textContent = '';
+    if (!segs.length) {
+      var li = el('li', 'legend-empty', 'Sobald du Ausgaben erfasst, siehst du hier, wofür dein Geld draufgeht.');
+      li.style.display = 'block';
+      legend.appendChild(li);
+      return;
+    }
+    segs.forEach(function (k) {
+      var item = el('li');
+      var dot = el('span', 'dot');
+      dot.style.background = CATEGORIES[k].color;
+      item.appendChild(dot);
+      item.appendChild(el('span', 'name', k));
+      item.appendChild(el('span', 'pct', fmtPercent(byCategory[k] / total)));
+      item.appendChild(el('span', 'amt', fmtMoney(round2(byCategory[k]), 'EUR')));
+      legend.appendChild(item);
+    });
+  }
+
+  function renderList() {
+    var list = $('#list');
+    list.textContent = '';
+    if (!state.expenses.length) {
+      var empty = el('div', 'group empty');
+      empty.appendChild(el('div', 'ill', '🧳'));
+      empty.appendChild(el('strong', null, 'Noch nichts ausgegeben'));
+      empty.appendChild(el('span', null, 'Erfasse oben deine erste Ausgabe – sie erscheint dann hier, nach Tagen sortiert.'));
+      list.appendChild(empty);
+      return;
+    }
+
+    var sorted = state.expenses.slice().sort(function (a, b) {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+
+    /* Nach Tagen gruppieren */
+    var days = [];
+    sorted.forEach(function (e) {
+      var key = startOfDay(e.date);
+      var last = days[days.length - 1];
+      if (!last || last.key !== key) { last = { key: key, items: [], sum: 0 }; days.push(last); }
+      last.items.push(e);
+      last.sum += e.amountEUR;
+    });
+
+    days.forEach(function (day) {
+      var head = el('div', 'day-head');
+      head.appendChild(el('span', null, dayLabel(day.items[0].date)));
+      head.appendChild(el('span', 'sum', fmtMoney(round2(day.sum), 'EUR')));
+      list.appendChild(head);
+
+      var group = el('div', 'group');
+      day.items.forEach(function (e) {
+        var cat = CATEGORIES[e.category];
+        var wrap = el('div', 'swipe');
+
+        var del = el('button', 'swipe-del');
+        del.type = 'button';
+        del.innerHTML = ICON_TRASH;
+        del.appendChild(el('span', null, 'Löschen'));
+        del.setAttribute('aria-label', '„' + e.title + '“ löschen');
+        del.dataset.id = e.id;
+        wrap.appendChild(del);
+
+        var row = el('div', 'row');
+        var ico = el('div', 'ico', cat.icon);
+        ico.style.background = hexToRgba(cat.color, 0.24);
+        ico.setAttribute('aria-hidden', 'true');
+        row.appendChild(ico);
+
+        var meta = el('div', 'meta');
+        meta.appendChild(el('div', 't', e.title));
+        meta.appendChild(el('div', 's', e.category));
+        row.appendChild(meta);
+
+        var amt = el('div', 'amt');
+        amt.appendChild(el('div', 'eur', fmtMoney(e.amountEUR, 'EUR')));
+        amt.appendChild(el('div', 'orig', e.currency !== 'EUR'
+          ? fmtMoney(e.amountOriginal, e.currency)
+          : timeFmt.format(new Date(e.date))));
+        row.appendChild(amt);
+
+        wrap.appendChild(row);
+        group.appendChild(wrap);
+      });
+      list.appendChild(group);
+    });
+
+    list.appendChild(el('p', 'list-hint', 'Zum Löschen einen Eintrag nach links wischen.'));
+  }
+
+  function render() {
+    var t = computeTotals();
+    renderPass(t.byCategory, t.total);
+    renderChart(t.byCategory, t.total);
+    renderList();
+  }
+
+  function bumpTotal() {
+    var node = $('#totalAmount');
+    node.classList.remove('bump');
+    void node.offsetWidth;
+    node.classList.add('bump');
+    setTimeout(function () { node.classList.remove('bump'); }, 350);
+  }
+
+  /* ---------- Formular ---------- */
+  var titleInput = $('#title');
+  var amountInput = $('#amount');
+  var currencySelect = $('#currency');
+  var categorySelect = $('#category');
+  var chips = $('#catChips');
+  var formError = $('#formError');
+  var form = $('#expenseForm');
+
+  /* Alle Währungen einmalig nach deutschem Namen sortiert */
+  var CURRENCIES_SORTED = CURRENCIES.slice().sort(function (a, b) {
+    return curName(a).localeCompare(curName(b), 'de');
+  });
+
+  /* Zuletzt genutzte Währungen: aktuelle Auswahl, dann aus den neuesten Ausgaben, Euro immer dabei */
+  function recentCurrencies() {
+    var list = [];
+    function add(c) { if (c && list.indexOf(c) < 0 && CURRENCIES.indexOf(c) > -1) list.push(c); }
+    add(state.lastCurrency);
+    state.expenses.slice().sort(function (a, b) {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }).forEach(function (e) { add(e.currency); });
+    add('EUR');
+    return list.slice(0, 6);
+  }
+
+  function currencyOption(c) {
+    var o = el('option', null, curFlag(c) + ' ' + curName(c) + ' (' + c + ')');
+    o.value = c;
+    return o;
+  }
+
+  function fillCurrencySelect() {
+    var selected = currencySelect.value || state.lastCurrency;
+    currencySelect.textContent = '';
+    var recent = el('optgroup');
+    recent.label = 'Zuletzt verwendet';
+    recentCurrencies().forEach(function (c) { recent.appendChild(currencyOption(c)); });
+    var all = el('optgroup');
+    all.label = 'Alle Währungen';
+    CURRENCIES_SORTED.forEach(function (c) { all.appendChild(currencyOption(c)); });
+    currencySelect.appendChild(recent);
+    currencySelect.appendChild(all);
+    setCurrency(selected);
+  }
+
+  function fillControls() {
+    fillCurrencySelect();
+    CATEGORY_KEYS.forEach(function (k) {
+      var o = el('option', null, k);
+      o.value = k;
+      categorySelect.appendChild(o);
+
+      var chip = el('button', 'chip');
+      chip.type = 'button';
+      chip.setAttribute('role', 'radio');
+      chip.dataset.cat = k;
+      chip.style.setProperty('--chip-color', CATEGORIES[k].color);
+      chip.appendChild(el('span', 'e', CATEGORIES[k].icon));
+      chip.appendChild(el('span', null, k));
+      chips.appendChild(chip);
+    });
+    setCurrency(state.lastCurrency);
+    setCategory(state.lastCategory);
+  }
+
+  function setCurrency(c) {
+    currencySelect.value = c;
+    $('#curFlag').textContent = curFlag(c);
+    $('#curCode').textContent = c;
+  }
+
+  function setCategory(k) {
+    categorySelect.value = k;
+    chips.querySelectorAll('.chip').forEach(function (chip) {
+      var on = chip.dataset.cat === k;
+      chip.setAttribute('aria-checked', on ? 'true' : 'false');
+      chip.tabIndex = on ? 0 : -1;
+      /* Gewählten Chip sichtbar halten, ohne die Seite zu scrollen */
+      if (on) {
+        var left = chip.offsetLeft - 16;
+        var right = chip.offsetLeft + chip.offsetWidth + 16 - chips.clientWidth;
+        if (chips.scrollLeft > left) chips.scrollLeft = left;
+        else if (chips.scrollLeft < right) chips.scrollLeft = right;
+      }
+    });
+  }
+
+  chips.addEventListener('click', function (ev) {
+    var chip = ev.target.closest('.chip');
+    if (!chip) return;
+    setCategory(chip.dataset.cat);
+    state.lastCategory = chip.dataset.cat;
+    save();
+  });
+  chips.addEventListener('keydown', function (ev) {
+    if (['ArrowRight', 'ArrowLeft'].indexOf(ev.key) < 0) return;
+    ev.preventDefault();
+    var i = CATEGORY_KEYS.indexOf(categorySelect.value) + (ev.key === 'ArrowRight' ? 1 : -1);
+    var k = CATEGORY_KEYS[(i + CATEGORY_KEYS.length) % CATEGORY_KEYS.length];
+    setCategory(k);
+    state.lastCategory = k;
+    save();
+    var active = chips.querySelector('[data-cat="' + k + '"]');
+    active.focus();
+    active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+
+  function updateConvHint() {
+    var hint = $('#convHint');
+    var cur = currencySelect.value;
+    var val = parseAmount(amountInput.value, decimalsFor(cur));
+    if (cur === 'EUR') { hint.textContent = ''; return; }
+    var rateTxt = '1 ' + cur + ' = ' + fmtRate(state.rates[cur]) + ' €';
+    hint.textContent = (isFinite(val) && val > 0)
+      ? '≈ ' + fmtMoney(round2(val * state.rates[cur]), 'EUR') + '   (' + rateTxt + ')'
+      : rateTxt;
+  }
+
+  function showFormError(msg, field) {
+    formError.textContent = msg;
+    if (!field) return;
+    var row = field.closest('.frow');
+    row.classList.add('invalid');
+    row.classList.remove('shake');
+    void row.offsetWidth;
+    row.classList.add('shake');
+    field.focus();
+  }
+
+  function clearFormError() {
+    formError.textContent = '';
+    form.querySelectorAll('.frow.invalid').forEach(function (r) { r.classList.remove('invalid'); });
+  }
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    clearFormError();
+
+    var title = titleInput.value.trim().replace(/\s+/g, ' ');
+    var amount = parseAmount(amountInput.value, decimalsFor(currencySelect.value));
+    var currency = currencySelect.value;
+    var category = categorySelect.value;
+
+    if (!title) return showFormError('Gib ein, wofür du bezahlt hast.', titleInput);
+    if (!amountInput.value.trim()) return showFormError('Gib einen Betrag ein.', amountInput);
+    if (!isFinite(amount)) return showFormError('Diesen Betrag kann ich nicht lesen. Beispiel: 12,50', amountInput);
+    if (amount <= 0) return showFormError('Der Betrag muss größer als 0 sein.', amountInput);
+    if (amount > 1e12) return showFormError('Der Betrag ist zu groß.', amountInput);
+    if (CURRENCIES.indexOf(currency) < 0 || CATEGORY_KEYS.indexOf(category) < 0) return showFormError('Wähle Währung und Kategorie.');
+
+    var amountOriginal = roundForCurrency(amount, currency);
+    if (amountOriginal <= 0) return showFormError('Der Betrag ist zu klein.', amountInput);
+
+    state.expenses.push({
+      id: uid(),
+      title: title,
+      amountOriginal: amountOriginal,
+      currency: currency,
+      amountEUR: round2(amountOriginal * state.rates[currency]),
+      category: category,
+      date: new Date().toISOString()
+    });
+    state.lastCurrency = currency;
+    state.lastCategory = category;
+    save();
+    render();
+    fillCurrencySelect();
+    bumpTotal();
+
+    titleInput.value = '';
+    amountInput.value = '';
+    updateConvHint();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    showToast('„' + title + '“ hinzugefügt');
+  });
+
+  titleInput.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); amountInput.focus(); }
+  });
+  [titleInput, amountInput].forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      inp.closest('.frow').classList.remove('invalid');
+      if (formError.textContent) formError.textContent = '';
+    });
+  });
+  amountInput.addEventListener('input', updateConvHint);
+  currencySelect.addEventListener('change', function () {
+    setCurrency(currencySelect.value);
+    state.lastCurrency = currencySelect.value;
+    save();
+    updateConvHint();
+  });
+
+  /* ---------- Löschen per Wischgeste (wie in Mail) ---------- */
+  var ACTION_W = 88;
+  var openRow = null;
+  var drag = null;
+
+  function setRowX(row, x) { row.style.transform = x ? 'translateX(' + x + 'px)' : ''; }
+  function closeOpenRow() { if (openRow) { setRowX(openRow, 0); openRow = null; } }
+
+  function deleteById(id) {
+    var idx = -1;
+    for (var i = 0; i < state.expenses.length; i++) { if (state.expenses[i].id === id) { idx = i; break; } }
+    if (idx < 0) return;
+    var removed = state.expenses.splice(idx, 1)[0];
+    openRow = null;
+    save();
+    render();
+    showToast('„' + removed.title + '“ gelöscht', 'Widerrufen', function () {
+      state.expenses.splice(Math.min(idx, state.expenses.length), 0, removed);
+      save();
+      render();
+    }, 'warn');
+  }
+
+  var list = $('#list');
+  list.addEventListener('pointerdown', function (ev) {
+    var row = ev.target.closest('.row');
+    if (!row) return;
+    if (openRow && openRow !== row) closeOpenRow();
+    drag = {
+      row: row,
+      x0: ev.clientX,
+      y0: ev.clientY,
+      base: row === openRow ? -ACTION_W : 0,
+      dx: 0,
+      active: false,
+      id: ev.pointerId
+    };
+  });
+  list.addEventListener('pointermove', function (ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    var dx = ev.clientX - drag.x0;
+    var dy = ev.clientY - drag.y0;
+    if (!drag.active) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { drag = null; return; }
+      if (Math.abs(dx) < 8) return;
+      drag.active = true;
+      drag.row.classList.add('dragging');
+      try { drag.row.setPointerCapture(ev.pointerId); } catch (e) {}
+    }
+    var x = Math.min(0, drag.base + dx);
+    var w = drag.row.offsetWidth;
+    if (x < -w * 0.5) x = -w * 0.5 + (x + w * 0.5) * 0.3; /* Gummiband-Effekt */
+    drag.dx = x;
+    setRowX(drag.row, x);
+  });
+  function endDrag(ev) {
+    if (!drag || (ev && ev.pointerId !== drag.id)) return;
+    var d = drag;
+    drag = null;
+    d.row.classList.remove('dragging');
+    if (!d.active) {
+      if (openRow === d.row) closeOpenRow();
+      return;
+    }
+    var w = d.row.offsetWidth;
+    if (d.dx < -w * 0.45) {
+      setRowX(d.row, -w);
+      var id = d.row.parentNode.querySelector('.swipe-del').dataset.id;
+      setTimeout(function () { deleteById(id); }, 200);
+    } else if (d.dx < -ACTION_W / 2) {
+      setRowX(d.row, -ACTION_W);
+      openRow = d.row;
+    } else {
+      setRowX(d.row, 0);
+      if (openRow === d.row) openRow = null;
+    }
+  }
+  list.addEventListener('pointerup', endDrag);
+  list.addEventListener('pointercancel', endDrag);
+  list.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.swipe-del');
+    if (btn) deleteById(btn.dataset.id);
+  });
+  /* Tastatur: Fokus auf den Löschen-Knopf öffnet die Zeile */
+  list.addEventListener('focusin', function (ev) {
+    var btn = ev.target.closest('.swipe-del');
+    if (!btn) return;
+    closeOpenRow();
+    openRow = btn.parentNode.querySelector('.row');
+    setRowX(openRow, -ACTION_W);
+  });
+  document.addEventListener('pointerdown', function (ev) {
+    if (openRow && !ev.target.closest('.swipe')) closeOpenRow();
+  });
+
+  /* ---------- Rückmeldung (Dynamic-Island-Stil) ---------- */
+  var toastTimer = null;
+  var toastCallback = null;
+  function showToast(msg, actionLabel, onAction, kind) {
+    var toast = $('#toast');
+    toast.classList.toggle('warn', kind === 'warn');
+    $('#toastBadge').innerHTML = kind === 'warn' ? ICON_TRASH : ICON_CHECK;
+    $('#toastMsg').textContent = msg;
+    $('#toastAction').textContent = actionLabel || '';
+    toastCallback = onAction || null;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, actionLabel ? 5000 : 2200);
+  }
+  function hideToast() {
+    $('#toast').classList.remove('show');
+    toastCallback = null;
+  }
+  $('#toastAction').addEventListener('click', function () {
+    var cb = toastCallback;
+    clearTimeout(toastTimer);
+    hideToast();
+    if (cb) cb();
+  });
+
+  /* ---------- Navigationsleiste beim Scrollen ---------- */
+  var navbar = $('#navbar');
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      var show = !entries[0].isIntersecting;
+      navbar.classList.toggle('show', show);
+      navbar.setAttribute('aria-hidden', show ? 'false' : 'true');
+      navbar.querySelector('button').tabIndex = show ? 0 : -1;
+    }, { rootMargin: '-40px 0px 0px 0px' }).observe($('#largeTitle'));
+  }
+
+  /* ---------- Overlays ---------- */
+  var lastFocus = null;
+  function openOverlay(node, focusTarget) {
+    lastFocus = document.activeElement;
+    node.classList.add('open');
+    node.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (focusTarget) setTimeout(function () { focusTarget.focus(); }, 60);
+  }
+  function closeOverlay(node) {
+    node.classList.remove('open');
+    node.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  /* Wechselkurse */
+  var ratesOverlay = $('#ratesOverlay');
+  var ratesList = $('#ratesList');
+  var ratesError = $('#ratesError');
+
+  var rateSearch = $('#rateSearch');
+
+  function rateRow(c, rates) {
+    var row = el('div', 'rate-row');
+    row.dataset.search = (c + ' ' + curName(c) + ' ' + curCountry(c)).toLowerCase();
+    var flag = el('span', 'flag', curFlag(c));
+    flag.setAttribute('aria-hidden', 'true');
+    row.appendChild(flag);
+    var lbl = el('label', 'lbl');
+    lbl.setAttribute('for', 'rate-' + c);
+    lbl.appendChild(el('b', null, '1 ' + c));
+    lbl.appendChild(el('small', null, curName(c)));
+    row.appendChild(lbl);
+    var inp = el('input', 'rate-input');
+    inp.type = 'text';
+    inp.id = 'rate-' + c;
+    inp.setAttribute('inputmode', 'decimal');
+    inp.dataset.currency = c;
+    inp.value = fmtRate(rates[c]);
+    inp.addEventListener('input', function () { inp.classList.remove('invalid'); ratesError.textContent = ''; });
+    row.appendChild(inp);
+    row.appendChild(el('span', 'unit', '€'));
+    return row;
+  }
+
+  function buildRatesForm(rates) {
+    ratesList.textContent = '';
+    ratesError.textContent = '';
+    var mine = recentCurrencies().filter(function (c) { return c !== 'EUR'; });
+    var rest = CURRENCIES_SORTED.filter(function (c) { return c !== 'EUR' && mine.indexOf(c) < 0; });
+    [['Deine Währungen', mine], ['Alle Währungen', rest]].forEach(function (sec) {
+      if (!sec[1].length) return;
+      var wrap = el('div', 'rate-section');
+      wrap.appendChild(el('h3', 'rate-sec-title', sec[0]));
+      var group = el('div', 'rates-group');
+      sec[1].forEach(function (c) { group.appendChild(rateRow(c, rates)); });
+      wrap.appendChild(group);
+      ratesList.appendChild(wrap);
+    });
+    var none = el('p', 'rate-none', 'Keine passende Währung gefunden.');
+    none.id = 'rateNone';
+    ratesList.appendChild(none);
+    filterRates();
+  }
+
+  function filterRates() {
+    var q = rateSearch.value.trim().toLowerCase();
+    var any = false;
+    ratesList.querySelectorAll('.rate-section').forEach(function (sec) {
+      var visible = 0;
+      sec.querySelectorAll('.rate-row').forEach(function (row) {
+        var hit = !q || row.dataset.search.indexOf(q) > -1;
+        row.classList.toggle('hide', !hit);
+        if (hit) visible++;
+      });
+      sec.classList.toggle('hide', !visible);
+      if (visible) any = true;
+    });
+    $('#rateNone').classList.toggle('hide', any);
+  }
+  rateSearch.addEventListener('input', filterRates);
+
+  document.querySelectorAll('.open-rates').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      rateSearch.value = '';
+      buildRatesForm(state.rates);
+      $('#recalcToggle').checked = false;
+      openOverlay(ratesOverlay);
+      $('.sheet-body').scrollTop = 0;
+    });
+  });
+  $('#ratesCancel').addEventListener('click', function () { closeOverlay(ratesOverlay); });
+  $('#ratesDefault').addEventListener('click', function () { buildRatesForm(DEFAULT_RATES); });
+  ratesOverlay.addEventListener('click', function (ev) { if (ev.target === ratesOverlay) closeOverlay(ratesOverlay); });
+
+  $('#ratesSave').addEventListener('click', function () {
+    var newRates = { EUR: 1 };
+    var ok = true;
+    ratesList.querySelectorAll('input').forEach(function (inp) {
+      var v = parseAmount(inp.value);
+      if (!isFinite(v) || v <= 0 || v > 1e6) {
+        inp.classList.add('invalid');
+        ok = false;
+      } else {
+        newRates[inp.dataset.currency] = v;
+      }
+    });
+    if (!ok) {
+      ratesError.textContent = 'Bitte gültige Kurse größer als 0 eingeben, z. B. 0,92.';
+      rateSearch.value = '';
+      filterRates();
+      ratesList.querySelector('.rate-input.invalid').scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+
+    state.rates = newRates;
+    var recalc = $('#recalcToggle').checked;
+    if (recalc) {
+      state.expenses.forEach(function (e) {
+        e.amountEUR = round2(e.amountOriginal * state.rates[e.currency]);
+      });
+    }
+    save();
+    render();
+    updateConvHint();
+    closeOverlay(ratesOverlay);
+    showToast(recalc ? 'Kurse gesichert und neu umgerechnet' : 'Wechselkurse gesichert');
+  });
+
+  /* Zurücksetzen */
+  var confirmOverlay = $('#confirmOverlay');
+  $('#resetBtn').addEventListener('click', function () {
+    var n = state.expenses.length;
+    $('#confirmText').textContent = (n
+      ? (n === 1 ? 'Deine Ausgabe wird' : 'Alle ' + n + ' Ausgaben werden') + ' endgültig gelöscht'
+      : 'Alle Einstellungen werden zurückgesetzt') + ' und die Wechselkurse auf Standardwerte gesetzt.';
+    openOverlay(confirmOverlay, $('#confirmCancel'));
+  });
+  $('#confirmCancel').addEventListener('click', function () { closeOverlay(confirmOverlay); });
+  confirmOverlay.addEventListener('click', function (ev) { if (ev.target === confirmOverlay) closeOverlay(confirmOverlay); });
+  $('#confirmOk').addEventListener('click', function () {
+    state.expenses = [];
+    state.rates = Object.assign({}, DEFAULT_RATES);
+    state.lastCurrency = 'EUR';
+    state.lastCategory = 'Essen';
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    save();
+    setCurrency(state.lastCurrency);
+    fillCurrencySelect();
+    setCategory(state.lastCategory);
+    clearFormError();
+    updateConvHint();
+    render();
+    closeOverlay(confirmOverlay);
+    showToast('Alle Daten gelöscht', null, null, 'warn');
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Escape') return;
+    if (confirmOverlay.classList.contains('open')) closeOverlay(confirmOverlay);
+    else if (ratesOverlay.classList.contains('open')) closeOverlay(ratesOverlay);
+  });
+
+  /* Synchronisierung zwischen mehreren offenen Tabs */
+  window.addEventListener('storage', function (ev) {
+    if (ev.key !== STORAGE_KEY) return;
+    state.expenses = [];
+    state.rates = Object.assign({}, DEFAULT_RATES);
+    load();
+    render();
+    fillCurrencySelect();
+    updateConvHint();
+  });
+
+  /* ---------- PWA: App-Icon & Manifest (ohne externe Dateien) ---------- */
+  function setupPwaAssets() {
+    try {
+      var size = 180;
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      var ctx = canvas.getContext('2d');
+      var g = ctx.createLinearGradient(0, 0, size, size);
+      g.addColorStop(0, '#0A84FF');
+      g.addColorStop(1, '#0058D6');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, size, size);
+      /* Abrisslinie der Bordkarte */
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(0, 118, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(size, 118, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([10, 9]);
+      ctx.beginPath(); ctx.moveTo(26, 118); ctx.lineTo(size - 26, 118); ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 88px -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('€', size / 2, 62);
+      var iconUrl = canvas.toDataURL('image/png');
+
+      var touch = document.createElement('link');
+      touch.rel = 'apple-touch-icon';
+      touch.href = iconUrl;
+      document.head.appendChild(touch);
+
+      var fav = document.createElement('link');
+      fav.rel = 'icon';
+      fav.type = 'image/png';
+      fav.href = iconUrl;
+      document.head.appendChild(fav);
+
+      if (/^https?:$/.test(location.protocol)) {
+        var manifest = {
+          name: 'Reisekosten',
+          short_name: 'Reisekosten',
+          display: 'standalone',
+          orientation: 'portrait',
+          background_color: '#000000',
+          theme_color: '#000000',
+          start_url: location.href.split('#')[0],
+          scope: location.origin + location.pathname.replace(/[^/]*$/, ''),
+          icons: [{ src: iconUrl, sizes: '180x180', type: 'image/png' }]
+        };
+        var m = document.createElement('link');
+        m.rel = 'manifest';
+        m.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
+        document.head.appendChild(m);
+      }
+    } catch (e) { /* Icons sind optional */ }
+  }
+
+  /* Optional: Liegt eine sw.js neben dieser Datei, startet die App auch ohne Netz vom Home-Bildschirm. */
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+    var reg = function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* keine sw.js vorhanden – App funktioniert trotzdem */ });
+    };
+    if (document.readyState === 'complete') reg(); else window.addEventListener('load', reg);
+  }
+
+  /* ---------- Start ---------- */
+  load();
+  fillControls();
+  updateConvHint();
+  render();
+  setupPwaAssets();
+  registerServiceWorker();
+
+  /* "Heute"/"Gestern" aktualisieren, wenn die App nach Mitternacht wieder geöffnet wird */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') render();
+  });
+})();
+</script>
+</body>
+</html>
