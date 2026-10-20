@@ -74,7 +74,7 @@
   }
   .navbar.show { opacity: 1; pointer-events: auto; }
   .navbar .nav-title { font-size: 17px; font-weight: 600; }
-  .navbar .nav-btn { position: absolute; right: var(--side-r); bottom: 3px; }
+  .navbar .nav-btns { position: absolute; right: var(--side-r); bottom: 3px; display: flex; margin-right: -6px; }
 
   .icon-btn {
     width: 44px; height: 44px;
@@ -117,7 +117,10 @@
     font-weight: 700;
     letter-spacing: 0.4px;
   }
-  .large-title .icon-btn { margin-right: -6px; margin-bottom: -2px; }
+  .hdr-btns { display: flex; margin-right: -6px; margin-bottom: -2px; }
+  .icon-btn:disabled { cursor: default; }
+  .spinning svg { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .sec {
     display: flex;
@@ -233,9 +236,45 @@
     caret-color: var(--accent);
   }
   .plain-input::placeholder { color: var(--text-3); }
+  .plain-input:focus-visible { outline: none; } /* wie in iOS: der Cursor zeigt das aktive Feld */
   .title-input { height: 52px; font-size: 17px; }
 
   .amount-wrap { display: flex; align-items: center; gap: 12px; padding: 12px 0 12px; }
+  .minus-sign {
+    display: none;
+    margin-right: -10px;
+    font-family: var(--font-round);
+    font-size: 34px;
+    font-weight: 600;
+    color: var(--green);
+  }
+  #expenseForm.refund .minus-sign { display: block; }
+  #expenseForm.refund .amount-input { color: var(--green); }
+  .seg-row { padding: 10px 16px; }
+  .seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 9px;
+    background: var(--fill-2);
+  }
+  .seg-btn {
+    height: 32px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .seg-btn[aria-checked="true"] {
+    background: #636366;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
+  }
   .amount-input {
     flex: 1;
     min-width: 0;
@@ -452,8 +491,59 @@
   .row .s { font-size: 14px; color: var(--text-2); margin-top: 2px; white-space: nowrap; }
   .row .amt { text-align: right; flex: 0 0 auto; }
   .row .amt .eur { font-family: var(--font-round); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row .amt .eur.refund { color: var(--green); }
+  .row .tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: rgba(48, 209, 88, 0.16);
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 600;
+  }
   .row .amt .orig { font-size: 14px; color: var(--text-2); margin-top: 2px; font-variant-numeric: tabular-nums; }
-  .list-hint { margin: 8px 16px 0; font-size: 13px; color: var(--text-2); }
+  .list-hint { margin: 8px 16px 0; font-size: 13px; color: var(--text-2); line-height: 1.4; }
+  .sec-btn {
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.2px;
+    min-height: 44px;
+    margin: -10px -4px;
+    padding: 0 4px;
+    cursor: pointer;
+  }
+  .sec-btn.strong { font-weight: 600; }
+  .sec-btn:active { opacity: 0.5; }
+  /* Bearbeiten-Modus: rotes Minus vor jedem Eintrag, wie in Mail oder Notizen */
+  .row .minus {
+    display: none;
+    position: relative;
+    flex: 0 0 22px;
+    width: 22px; height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--red);
+    cursor: pointer;
+  }
+  .row .minus::before {
+    content: "";
+    position: absolute;
+    left: 5px; right: 5px; top: 10px;
+    height: 2px;
+    border-radius: 1px;
+    background: #fff;
+    transition: transform 0.25s var(--ease);
+  }
+  .row .minus::after { content: ""; position: absolute; inset: -11px; }
+  .row.open .minus::before { transform: rotate(90deg); }
+  .editing .row .minus { display: block; animation: popIn 0.25s var(--ease); }
+  .editing .swipe + .swipe .row::before { left: 98px; }
+  @keyframes popIn { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
   .empty {
     text-align: center;
     padding: 34px 24px;
@@ -527,6 +617,37 @@
   }
   .sheet .note { font-size: 13px; color: var(--text-2); margin: 8px 16px 18px; line-height: 1.4; }
   .sheet .error { margin: 10px 16px 0; }
+  .live-card { background: var(--row); border-radius: 12px; overflow: hidden; }
+  .live-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .live-btn:active { background: var(--fill); }
+  .live-btn:disabled { cursor: default; background: transparent; }
+  .live-ico {
+    width: 30px; height: 30px;
+    flex: 0 0 30px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    display: grid;
+    place-items: center;
+  }
+  .live-ico svg { width: 17px; height: 17px; }
+  .live-txt { min-width: 0; }
+  .live-txt b { display: block; color: var(--accent); font-weight: 600; }
+  .live-txt small { display: block; margin-top: 2px; color: var(--text-2); font-size: 13px; line-height: 1.35; }
+  .live-src { margin: 7px 16px 16px; font-size: 12px; color: var(--text-3); }
+  .live-src a { color: var(--text-2); }
   .search-bar {
     position: sticky;
     top: 0;
@@ -722,17 +843,27 @@
 
 <div class="navbar" id="navbar" aria-hidden="true">
   <span class="nav-title">Reisekosten</span>
-  <button class="icon-btn nav-btn open-rates" type="button" aria-label="Wechselkurse anpassen" tabindex="-1">
-    <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V4M7 4L3 8M7 4l4 4"/><path d="M17 7v13M17 20l4-4M17 20l-4-4"/></svg></span>
-  </button>
+  <div class="nav-btns">
+    <button class="icon-btn refresh-rates" type="button" aria-label="Wechselkurse live aktualisieren" tabindex="-1">
+      <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></span>
+    </button>
+    <button class="icon-btn open-rates" type="button" aria-label="Wechselkurse anpassen" tabindex="-1">
+      <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V4M7 4L3 8M7 4l4 4"/><path d="M17 7v13M17 20l4-4M17 20l-4-4"/></svg></span>
+    </button>
+  </div>
 </div>
 
 <main class="app">
   <header class="large-title" id="largeTitle">
     <h1>Reisekosten</h1>
-    <button class="icon-btn open-rates" type="button" aria-label="Wechselkurse anpassen">
-      <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V4M7 4L3 8M7 4l4 4"/><path d="M17 7v13M17 20l4-4M17 20l-4-4"/></svg></span>
-    </button>
+    <div class="hdr-btns">
+      <button class="icon-btn refresh-rates" type="button" aria-label="Wechselkurse live aktualisieren">
+        <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></span>
+      </button>
+      <button class="icon-btn open-rates" type="button" aria-label="Wechselkurse anpassen">
+        <span class="disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V4M7 4L3 8M7 4l4 4"/><path d="M17 7v13M17 20l4-4M17 20l-4-4"/></svg></span>
+      </button>
+    </div>
   </header>
 
   <section class="pass" aria-live="polite" aria-label="Gesamtausgaben">
@@ -749,15 +880,21 @@
     </div>
     <div class="pass-tear" aria-hidden="true"><span></span></div>
     <div class="pass-fields">
-      <div><span class="k">Ausgaben</span><span class="v num" id="passCount">0</span></div>
+      <div><span class="k">Einträge</span><span class="v num" id="passCount">0</span></div>
       <div><span class="k">Ø pro Tag</span><span class="v num" id="passAvg">–</span></div>
       <div><span class="k">Größter Posten</span><span class="v" id="passTop">–</span></div>
     </div>
   </section>
 
-  <h2 class="sec">Neue Ausgabe</h2>
+  <h2 class="sec" id="formTitle">Neue Ausgabe</h2>
   <form id="expenseForm" novalidate autocomplete="off">
     <div class="group">
+      <div class="frow seg-row">
+        <div class="seg" id="kindSeg" role="radiogroup" aria-label="Art des Eintrags">
+          <button type="button" class="seg-btn" role="radio" data-kind="expense" aria-checked="true">Ausgabe</button>
+          <button type="button" class="seg-btn" role="radio" data-kind="refund" aria-checked="false" tabindex="-1">Erstattung</button>
+        </div>
+      </div>
       <div class="frow" id="titleRow">
         <label class="sr" for="title">Beschreibung</label>
         <input class="plain-input title-input" id="title" type="text" maxlength="60" placeholder="Wofür? z. B. Abendessen" enterkeyhint="next" autocapitalize="sentences">
@@ -765,6 +902,7 @@
       <div class="frow" id="amountRow">
         <div class="amount-wrap">
           <label class="sr" for="amount">Betrag</label>
+          <span class="minus-sign" aria-hidden="true">−</span>
           <input class="plain-input amount-input" id="amount" type="text" inputmode="decimal" placeholder="0,00" enterkeyhint="done">
           <span class="cur-pill">
             <span class="flag" id="curFlag" aria-hidden="true">🇪🇺</span>
@@ -781,7 +919,7 @@
       </div>
     </div>
     <p class="error" id="formError" role="alert"></p>
-    <button class="btn btn-primary" type="submit">Hinzufügen</button>
+    <button class="btn btn-primary" id="submitBtn" type="submit">Hinzufügen</button>
   </form>
 
   <h2 class="sec">Verteilung</h2>
@@ -791,14 +929,14 @@
         <svg id="donutSvg" viewBox="0 0 200 200" role="img" aria-label="Kreisdiagramm der Ausgaben nach Kategorie"></svg>
         <div class="donut-center">
           <div class="n" id="donutCount">0</div>
-          <div class="l" id="donutLabel">Ausgaben</div>
+          <div class="l" id="donutLabel">Einträge</div>
         </div>
       </div>
       <ul class="legend" id="legend"></ul>
     </div>
   </section>
 
-  <h2 class="sec">Verlauf</h2>
+  <h2 class="sec">Verlauf<button class="sec-btn" id="editBtn" type="button" hidden>Bearbeiten</button></h2>
   <section id="list"></section>
 
   <div class="group" style="margin-top:30px">
@@ -816,6 +954,13 @@
       <button class="btn btn-plain strong" type="button" id="ratesSave">Sichern</button>
     </div>
     <div class="sheet-body">
+      <div class="live-card">
+        <button class="live-btn refresh-rates" type="button" id="liveBtn">
+          <span class="live-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></span>
+          <span class="live-txt"><b id="liveTitle">Aktuelle Kurse laden</b><small id="liveStatus"></small></span>
+        </button>
+      </div>
+      <p class="live-src">Live-Kurse: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a></p>
       <div class="search-bar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input id="rateSearch" type="search" placeholder="Währung oder Land suchen" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Währung suchen">
@@ -904,6 +1049,8 @@
   var DAY_MS = 86400000;
 
   var ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 6v8"/><path d="M12 18.5h.01"/></svg>';
+  var DEFAULT_RATES_DATE = '2026-10-19'; /* Stand der eingebauten Standardkurse */
   var ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
 
   /* ---------- State ---------- */
@@ -911,8 +1058,11 @@
     expenses: [],
     rates: Object.assign({}, DEFAULT_RATES),
     lastCurrency: 'EUR',
-    lastCategory: 'Essen'
+    lastCategory: 'Essen',
+    ratesInfo: null /* Woher die Kurse stammen: null = Standard, sonst { date, fetchedAt, source, manual, skipped } */
   };
+
+  var editMode = false; /* Bearbeiten-Modus der Liste (wird nicht gespeichert) */
 
   /* ---------- Helfer ---------- */
   function $(sel) { return document.querySelector(sel); }
@@ -924,7 +1074,11 @@
     return node;
   }
 
-  function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+  /* Kaufmännisch runden – auch für negative Beträge (Erstattungen) */
+  function round2(n) {
+    var sign = n < 0 ? -1 : 1;
+    return sign * Math.round((Math.abs(n) + Number.EPSILON) * 100) / 100 || 0;
+  }
 
   function uid() {
     if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
@@ -937,7 +1091,8 @@
     if (!moneyFormatters[currency]) {
       moneyFormatters[currency] = new Intl.NumberFormat('de-DE', { style: 'currency', currency: currency });
     }
-    return moneyFormatters[currency].format(value);
+    /* Typografisches Minus (−) statt Bindestrich, keine "-0,00 €" */
+    return moneyFormatters[currency].format(value || 0).replace(/^-/, '−');
   }
 
   function fmtPercent(fraction) {
@@ -952,8 +1107,21 @@
 
   function roundForCurrency(amount, currency) {
     var f = Math.pow(10, decimalsFor(currency));
-    return Math.round((amount + Number.EPSILON) * f) / f;
+    var sign = amount < 0 ? -1 : 1;
+    return sign * Math.round((Math.abs(amount) + Number.EPSILON) * f) / f || 0;
   }
+
+  /* "2026-10-20" → Datum in lokaler Zeit (ohne Zeitzonen-Verschiebung) */
+  function isoToDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(NaN);
+  }
+  function todayIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  var dateFmtLong = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  var dateFmtShort = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' });
 
   /* Kurs mit bis zu 6 gültigen Stellen – auch für sehr kleine Werte wie beim Iranischen Rial */
   function fmtRate(n) {
@@ -1076,6 +1244,16 @@
       }
       if (data && CURRENCIES.indexOf(data.lastCurrency) > -1) state.lastCurrency = data.lastCurrency;
       if (data && CATEGORY_KEYS.indexOf(data.lastCategory) > -1) state.lastCategory = data.lastCategory;
+      var ri = data && data.ratesInfo;
+      if (ri && typeof ri === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(ri.date)) {
+        state.ratesInfo = {
+          date: ri.date,
+          fetchedAt: typeof ri.fetchedAt === 'string' ? ri.fetchedAt : null,
+          source: typeof ri.source === 'string' ? ri.source : '',
+          manual: !!ri.manual,
+          skipped: Array.isArray(ri.skipped) ? ri.skipped.filter(function (c) { return CURRENCIES.indexOf(c) > -1; }) : []
+        };
+      }
     } catch (e) {
       console.warn('Gespeicherte Daten konnten nicht gelesen werden.', e);
     }
@@ -1100,6 +1278,7 @@
       totals[e.category] += e.amountEUR;
       total += e.amountEUR;
     });
+    CATEGORY_KEYS.forEach(function (k) { totals[k] = round2(totals[k]); });
     return { byCategory: totals, total: round2(total) };
   }
 
@@ -1118,7 +1297,7 @@
     $('#passAvg').textContent = fmtMoney(total / days, 'EUR');
     $('#passSince').textContent = first === startOfDay(new Date()) ? 'Heute' : shortDateFmt.format(new Date(first));
     var top = CATEGORY_KEYS.slice().sort(function (a, b) { return byCategory[b] - byCategory[a]; })[0];
-    $('#passTop').textContent = CATEGORIES[top].icon + ' ' + top;
+    $('#passTop').textContent = byCategory[top] > 0 ? CATEGORIES[top].icon + ' ' + top : '–';
   }
 
   function renderChart(byCategory, total) {
@@ -1166,7 +1345,7 @@
 
     var n = state.expenses.length;
     $('#donutCount').textContent = String(n);
-    $('#donutLabel').textContent = n === 1 ? 'Ausgabe' : 'Ausgaben';
+    $('#donutLabel').textContent = n === 1 ? 'Eintrag' : 'Einträge';
 
     var legend = $('#legend');
     legend.textContent = '';
@@ -1190,7 +1369,13 @@
 
   function renderList() {
     var list = $('#list');
+    var editBtn = $('#editBtn');
     list.textContent = '';
+    if (!state.expenses.length) editMode = false;
+    list.classList.toggle('editing', editMode);
+    editBtn.hidden = !state.expenses.length;
+    editBtn.textContent = editMode ? 'Fertig' : 'Bearbeiten';
+    editBtn.classList.toggle('strong', editMode);
     if (!state.expenses.length) {
       var empty = el('div', 'group empty');
       empty.appendChild(el('div', 'ill', '🧳'));
@@ -1234,6 +1419,12 @@
         wrap.appendChild(del);
 
         var row = el('div', 'row');
+        var minus = el('button', 'minus');
+        minus.type = 'button';
+        minus.tabIndex = editMode ? 0 : -1;
+        minus.setAttribute('aria-label', '„' + e.title + '“ löschen');
+        row.appendChild(minus);
+
         var ico = el('div', 'ico', cat.icon);
         ico.style.background = hexToRgba(cat.color, 0.24);
         ico.setAttribute('aria-hidden', 'true');
@@ -1241,11 +1432,14 @@
 
         var meta = el('div', 'meta');
         meta.appendChild(el('div', 't', e.title));
-        meta.appendChild(el('div', 's', e.category));
+        var isRefund = e.amountOriginal < 0;
+        var sub = el('div', 's', e.category);
+        if (isRefund) sub.appendChild(el('span', 'tag', 'Erstattung'));
+        meta.appendChild(sub);
         row.appendChild(meta);
 
         var amt = el('div', 'amt');
-        amt.appendChild(el('div', 'eur', fmtMoney(e.amountEUR, 'EUR')));
+        amt.appendChild(el('div', isRefund ? 'eur refund' : 'eur', fmtMoney(e.amountEUR, 'EUR')));
         amt.appendChild(el('div', 'orig', e.currency !== 'EUR'
           ? fmtMoney(e.amountOriginal, e.currency)
           : timeFmt.format(new Date(e.date))));
@@ -1257,13 +1451,17 @@
       list.appendChild(group);
     });
 
-    list.appendChild(el('p', 'list-hint', 'Zum Löschen einen Eintrag nach links wischen.'));
+    list.appendChild(el('p', 'list-hint', editMode
+      ? 'Tippe auf das rote Minus und dann auf „Löschen“.'
+      : 'Zum Löschen oben auf „Bearbeiten“ tippen – oder einen Eintrag nach links wischen.'));
   }
 
   function render() {
     var t = computeTotals();
     renderPass(t.byCategory, t.total);
-    renderChart(t.byCategory, t.total);
+    /* Erstattungen verringern ihre Kategorie; das Diagramm zeigt die Anteile der verbleibenden Kosten */
+    var chartTotal = CATEGORY_KEYS.reduce(function (sum, k) { return sum + Math.max(0, t.byCategory[k]); }, 0);
+    renderChart(t.byCategory, chartTotal);
     renderList();
   }
 
@@ -1383,14 +1581,45 @@
     active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   });
 
+  /* ---------- Ausgabe oder Erstattung ---------- */
+  var entryKind = 'expense';
+  var KIND_TEXT = {
+    expense: { title: 'Neue Ausgabe', button: 'Hinzufügen', placeholder: 'Wofür? z. B. Abendessen' },
+    refund: { title: 'Neue Erstattung', button: 'Erstattung hinzufügen', placeholder: 'Wofür? z. B. Kaution zurück' }
+  };
+  function setKind(kind) {
+    entryKind = kind;
+    form.classList.toggle('refund', kind === 'refund');
+    document.querySelectorAll('#kindSeg .seg-btn').forEach(function (b) {
+      var on = b.dataset.kind === kind;
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    $('#formTitle').textContent = KIND_TEXT[kind].title;
+    $('#submitBtn').textContent = KIND_TEXT[kind].button;
+    titleInput.placeholder = KIND_TEXT[kind].placeholder;
+    updateConvHint();
+  }
+  $('#kindSeg').addEventListener('click', function (ev) {
+    var b = ev.target.closest('.seg-btn');
+    if (b) setKind(b.dataset.kind);
+  });
+  $('#kindSeg').addEventListener('keydown', function (ev) {
+    if (['ArrowLeft', 'ArrowRight'].indexOf(ev.key) < 0) return;
+    ev.preventDefault();
+    setKind(entryKind === 'refund' ? 'expense' : 'refund');
+    $('#kindSeg [aria-checked="true"]').focus();
+  });
+
   function updateConvHint() {
     var hint = $('#convHint');
     var cur = currencySelect.value;
     var val = parseAmount(amountInput.value, decimalsFor(cur));
     if (cur === 'EUR') { hint.textContent = ''; return; }
-    var rateTxt = '1 ' + cur + ' = ' + fmtRate(state.rates[cur]) + ' €';
+    var rateTxt = '1 ' + cur + ' = ' + fmtRate(state.rates[cur]) + ' €, Stand ' + dateFmtShort.format(isoToDate(ratesDate()));
+    var sign = entryKind === 'refund' ? -1 : 1;
     hint.textContent = (isFinite(val) && val > 0)
-      ? '≈ ' + fmtMoney(round2(val * state.rates[cur]), 'EUR') + '   (' + rateTxt + ')'
+      ? '≈ ' + fmtMoney(round2(sign * val * state.rates[cur]), 'EUR') + '   (' + rateTxt + ')'
       : rateTxt;
   }
 
@@ -1419,7 +1648,9 @@
     var currency = currencySelect.value;
     var category = categorySelect.value;
 
-    if (!title) return showFormError('Gib ein, wofür du bezahlt hast.', titleInput);
+    if (!title) return showFormError(entryKind === 'refund'
+      ? 'Gib ein, wofür du Geld zurückbekommst.'
+      : 'Gib ein, wofür du bezahlt hast.', titleInput);
     if (!amountInput.value.trim()) return showFormError('Gib einen Betrag ein.', amountInput);
     if (!isFinite(amount)) return showFormError('Diesen Betrag kann ich nicht lesen. Beispiel: 12,50', amountInput);
     if (amount <= 0) return showFormError('Der Betrag muss größer als 0 sein.', amountInput);
@@ -1428,9 +1659,12 @@
 
     var amountOriginal = roundForCurrency(amount, currency);
     if (amountOriginal <= 0) return showFormError('Der Betrag ist zu klein.', amountInput);
+    var wasRefund = entryKind === 'refund';
+    if (wasRefund) amountOriginal = -amountOriginal;
 
+    var newId = uid();
     state.expenses.push({
-      id: uid(),
+      id: newId,
       title: title,
       amountOriginal: amountOriginal,
       currency: currency,
@@ -1447,9 +1681,14 @@
 
     titleInput.value = '';
     amountInput.value = '';
-    updateConvHint();
+    setKind('expense'); /* Erstattungen sind die Ausnahme – danach wieder auf Ausgabe */
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    showToast('„' + title + '“ hinzugefügt');
+    showToast('„' + title + '“ ' + (wasRefund ? 'als Erstattung hinzugefügt' : 'hinzugefügt'), 'Widerrufen', function () {
+      state.expenses = state.expenses.filter(function (x) { return x.id !== newId; });
+      save();
+      render();
+      fillCurrencySelect();
+    });
   });
 
   titleInput.addEventListener('keydown', function (ev) {
@@ -1461,7 +1700,16 @@
       if (formError.textContent) formError.textContent = '';
     });
   });
-  amountInput.addEventListener('input', updateConvHint);
+  /* Ein vorangestelltes Minus schaltet auf Erstattung, ein Plus zurück auf Ausgabe */
+  amountInput.addEventListener('input', function () {
+    var v = amountInput.value;
+    var m = /^\s*([-−–+])\s*/.exec(v);
+    if (m) {
+      amountInput.value = v.slice(m[0].length);
+      setKind(m[1] === '+' ? 'expense' : 'refund');
+    }
+    updateConvHint();
+  });
   currencySelect.addEventListener('change', function () {
     setCurrency(currencySelect.value);
     state.lastCurrency = currencySelect.value;
@@ -1474,7 +1722,16 @@
   var openRow = null;
   var drag = null;
 
-  function setRowX(row, x) { row.style.transform = x ? 'translateX(' + x + 'px)' : ''; }
+  function setRowX(row, x) {
+    row.style.transform = x ? 'translateX(' + x + 'px)' : '';
+    row.classList.toggle('open', !!x);
+  }
+
+  $('#editBtn').addEventListener('click', function () {
+    openRow = null;
+    editMode = !editMode;
+    renderList();
+  });
   function closeOpenRow() { if (openRow) { setRowX(openRow, 0); openRow = null; } }
 
   function deleteById(id) {
@@ -1494,6 +1751,7 @@
 
   var list = $('#list');
   list.addEventListener('pointerdown', function (ev) {
+    if (ev.target.closest('.minus')) return; /* Minus wird per Klick behandelt */
     var row = ev.target.closest('.row');
     if (!row) return;
     if (openRow && openRow !== row) closeOpenRow();
@@ -1550,7 +1808,15 @@
   list.addEventListener('pointercancel', endDrag);
   list.addEventListener('click', function (ev) {
     var btn = ev.target.closest('.swipe-del');
-    if (btn) deleteById(btn.dataset.id);
+    if (btn) { deleteById(btn.dataset.id); return; }
+    var minus = ev.target.closest('.minus');
+    if (minus) {
+      var row = minus.closest('.row');
+      if (openRow === row) { closeOpenRow(); return; }
+      closeOpenRow();
+      setRowX(row, -ACTION_W);
+      openRow = row;
+    }
   });
   /* Tastatur: Fokus auf den Löschen-Knopf öffnet die Zeile */
   list.addEventListener('focusin', function (ev) {
@@ -1569,8 +1835,8 @@
   var toastCallback = null;
   function showToast(msg, actionLabel, onAction, kind) {
     var toast = $('#toast');
-    toast.classList.toggle('warn', kind === 'warn');
-    $('#toastBadge').innerHTML = kind === 'warn' ? ICON_TRASH : ICON_CHECK;
+    toast.classList.toggle('warn', kind === 'warn' || kind === 'err');
+    $('#toastBadge').innerHTML = kind === 'warn' ? ICON_TRASH : kind === 'err' ? ICON_ALERT : ICON_CHECK;
     $('#toastMsg').textContent = msg;
     $('#toastAction').textContent = actionLabel || '';
     toastCallback = onAction || null;
@@ -1596,7 +1862,7 @@
       var show = !entries[0].isIntersecting;
       navbar.classList.toggle('show', show);
       navbar.setAttribute('aria-hidden', show ? 'false' : 'true');
-      navbar.querySelector('button').tabIndex = show ? 0 : -1;
+      navbar.querySelectorAll('button').forEach(function (b) { b.tabIndex = show ? 0 : -1; });
     }, { rootMargin: '-40px 0px 0px 0px' }).observe($('#largeTitle'));
   }
 
@@ -1687,6 +1953,7 @@
     btn.addEventListener('click', function () {
       rateSearch.value = '';
       buildRatesForm(state.rates);
+      updateLiveStatus();
       $('#recalcToggle').checked = false;
       openOverlay(ratesOverlay);
       $('.sheet-body').scrollTop = 0;
@@ -1716,6 +1983,13 @@
       return;
     }
 
+    var changed = false, allDefault = true;
+    CURRENCIES.forEach(function (c) {
+      if (Math.abs(newRates[c] - state.rates[c]) > state.rates[c] * 1e-6) changed = true;
+      if (Math.abs(newRates[c] - DEFAULT_RATES[c]) > DEFAULT_RATES[c] * 1e-6) allDefault = false;
+    });
+    if (allDefault) state.ratesInfo = null;
+    else if (changed) state.ratesInfo = { date: todayIso(), fetchedAt: new Date().toISOString(), source: '', manual: true, skipped: [] };
     state.rates = newRates;
     var recalc = $('#recalcToggle').checked;
     if (recalc) {
@@ -1730,12 +2004,152 @@
     showToast(recalc ? 'Kurse gesichert und neu umgerechnet' : 'Wechselkurse gesichert');
   });
 
+  /* ---------- Live-Kurse: kurz online abrufen, danach wieder komplett offline ---------- */
+  /* Reihenfolge: genaueste Quelle zuerst, die anderen springen ein, wenn sie nicht erreichbar ist */
+  function parseCurrencyApi(d) {
+    if (!d || !d.eur) throw new Error('Unbekanntes Format');
+    var perEur = {};
+    Object.keys(d.eur).forEach(function (k) { perEur[k.toUpperCase()] = d.eur[k]; });
+    return { perEur: perEur, date: String(d.date || '').slice(0, 10) };
+  }
+  var RATE_SOURCES = [
+    {
+      name: 'ExchangeRate-API',
+      url: 'https://open.er-api.com/v6/latest/EUR',
+      parse: function (d) {
+        if (!d || d.result !== 'success' || !d.rates) throw new Error('Unbekanntes Format');
+        var t = new Date(d.time_last_update_unix * 1000);
+        return { perEur: d.rates, date: isNaN(t) ? todayIso() : t.toISOString().slice(0, 10) };
+      }
+    },
+    { name: 'currency-api', url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/eur.min.json', parse: parseCurrencyApi },
+    { name: 'currency-api', url: 'https://latest.currency-api.pages.dev/v1/currencies/eur.min.json', parse: parseCurrencyApi }
+  ];
+
+  function fetchJson(url, ms) {
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+    return fetch(url, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  /* Übernimmt die Kurse einer Quelle. Unplausible Werte (mehr als Faktor 50 vom Standardkurs entfernt,
+     z. B. veraltete Daten nach einer Währungsreform) werden übersprungen – dort bleibt der bisherige Kurs. */
+  function applyLiveRates(res, source) {
+    var next = Object.assign({}, state.rates);
+    var updated = 0;
+    var skipped = [];
+    CURRENCIES.forEach(function (c) {
+      if (c === 'EUR') return;
+      var per = Number(res.perEur[c]);
+      if (!isFinite(per) || per <= 0) return;
+      var rate = Number((1 / per).toPrecision(6));
+      var ratio = rate / DEFAULT_RATES[c];
+      if (ratio > 50 || ratio < 1 / 50) { skipped.push(c); return; }
+      next[c] = rate;
+      updated++;
+    });
+    if (updated < 20) throw new Error('Zu wenige Kurse');
+    state.rates = next;
+    state.ratesInfo = {
+      date: /^\d{4}-\d{2}-\d{2}$/.test(res.date) ? res.date : todayIso(),
+      fetchedAt: new Date().toISOString(),
+      source: source.name,
+      manual: false,
+      skipped: skipped
+    };
+    return { updated: updated, skipped: skipped };
+  }
+
+  var refreshing = false;
+  function setRefreshing(on) {
+    refreshing = on;
+    document.querySelectorAll('.refresh-rates').forEach(function (b) {
+      b.disabled = on;
+      b.classList.toggle('spinning', on);
+      b.setAttribute('aria-busy', on ? 'true' : 'false');
+    });
+    updateLiveStatus();
+  }
+
+  function refreshRates() {
+    if (refreshing) return;
+    if (navigator.onLine === false) {
+      showToast('Kein Internet – deine gespeicherten Kurse bleiben aktiv', null, null, 'err');
+      return;
+    }
+    setRefreshing(true);
+    var i = 0;
+    function attempt() {
+      var src = RATE_SOURCES[i];
+      return fetchJson(src.url, 8000)
+        .then(src.parse)
+        .then(function (res) { return applyLiveRates(res, src); })
+        .catch(function (err) {
+          i++;
+          if (i < RATE_SOURCES.length) return attempt();
+          throw err;
+        });
+    }
+    attempt().then(function (result) {
+      save();
+      updateConvHint();
+      if (ratesOverlay.classList.contains('open')) buildRatesForm(state.rates);
+      setRefreshing(false);
+      showToast(result.updated + ' Kurse aktualisiert, Stand ' + dateFmtShort.format(isoToDate(state.ratesInfo.date)));
+    }).catch(function () {
+      setRefreshing(false);
+      showToast('Kurse nicht erreichbar – gespeicherte bleiben aktiv', 'Erneut', refreshRates, 'err');
+    });
+  }
+
+  function ratesDate() {
+    return state.ratesInfo ? state.ratesInfo.date : DEFAULT_RATES_DATE;
+  }
+
+  function updateLiveStatus() {
+    var title = $('#liveTitle');
+    var status = $('#liveStatus');
+    if (refreshing) {
+      title.textContent = 'Kurse werden geladen …';
+      status.textContent = 'Einen Moment, danach funktioniert alles wieder offline.';
+      return;
+    }
+    title.textContent = 'Aktuelle Kurse laden';
+    var info = state.ratesInfo;
+    if (!info) {
+      status.textContent = 'Derzeit: Standardkurse vom ' + dateFmtLong.format(isoToDate(DEFAULT_RATES_DATE));
+    } else if (info.manual) {
+      status.textContent = 'Derzeit: von dir angepasst am ' + dateFmtLong.format(isoToDate(info.date));
+    } else {
+      var txt = 'Derzeit: Live-Kurse vom ' + dateFmtLong.format(isoToDate(info.date));
+      var at = info.fetchedAt ? new Date(info.fetchedAt) : null;
+      if (at && !isNaN(at)) {
+        txt += startOfDay(at) === startOfDay(new Date())
+          ? ', geladen heute um ' + timeFmt.format(at)
+          : ', geladen am ' + dateFmtShort.format(at);
+      }
+      if (info.skipped && info.skipped.length) {
+        txt += '. Nicht übernommen, weil unplausibel: ' + info.skipped.join(', ');
+      }
+      status.textContent = txt + '.';
+    }
+  }
+
+  document.querySelectorAll('.refresh-rates').forEach(function (btn) {
+    btn.addEventListener('click', refreshRates);
+  });
+
   /* Zurücksetzen */
   var confirmOverlay = $('#confirmOverlay');
   $('#resetBtn').addEventListener('click', function () {
     var n = state.expenses.length;
     $('#confirmText').textContent = (n
-      ? (n === 1 ? 'Deine Ausgabe wird' : 'Alle ' + n + ' Ausgaben werden') + ' endgültig gelöscht'
+      ? (n === 1 ? 'Dein Eintrag wird' : 'Alle ' + n + ' Einträge werden') + ' endgültig gelöscht'
       : 'Alle Einstellungen werden zurückgesetzt') + ' und die Wechselkurse auf Standardwerte gesetzt.';
     openOverlay(confirmOverlay, $('#confirmCancel'));
   });
@@ -1746,6 +2160,7 @@
     state.rates = Object.assign({}, DEFAULT_RATES);
     state.lastCurrency = 'EUR';
     state.lastCategory = 'Essen';
+    state.ratesInfo = null;
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     save();
     setCurrency(state.lastCurrency);
@@ -1769,6 +2184,7 @@
     if (ev.key !== STORAGE_KEY) return;
     state.expenses = [];
     state.rates = Object.assign({}, DEFAULT_RATES);
+    state.ratesInfo = null;
     load();
     render();
     fillCurrencySelect();
@@ -1846,6 +2262,7 @@
   load();
   fillControls();
   updateConvHint();
+  updateLiveStatus();
   render();
   setupPwaAssets();
   registerServiceWorker();
